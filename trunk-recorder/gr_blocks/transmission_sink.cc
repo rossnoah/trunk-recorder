@@ -23,7 +23,10 @@
 
 #include "transmission_sink.h"
 #include "../../trunk-recorder/call.h"
+#include "../../trunk-recorder/systems/system.h"
 #include <boost/filesystem.hpp>
+#include <filesystem>
+namespace fs = std::filesystem;
 #include <boost/math/special_functions/round.hpp>
 #include <climits>
 #include <cmath>
@@ -239,6 +242,56 @@ void transmission_sink::end_transmission() {
     transmission.length = length_in_seconds(); // length in seconds
     d_prior_transmission_length = d_prior_transmission_length + transmission.length;
     strcpy(transmission.filename, current_filename); // Copy the filename
+
+    // Immediately archive transmission if only_archive_transmissions is enabled
+    if (d_current_call && d_current_call->get_system() &&
+        d_current_call->get_system()->get_only_archive_transmissions() &&
+        d_current_call->get_system()->get_transmission_archive()) {
+
+      // Create archive path based on the call's capture directory and filename pattern
+      std::string capture_dir = d_current_call->get_capture_dir();
+      time_t work_start_time = d_current_call->get_start_time();
+
+      std::stringstream archive_path_stream;
+      tm *ltm = localtime(&work_start_time);
+      archive_path_stream << capture_dir << "/" << d_current_call->get_short_name() << "/"
+                         << 1900 + ltm->tm_year << "/" << 1 + ltm->tm_mon << "/" << ltm->tm_mday;
+      std::string archive_path_string = archive_path_stream.str();
+      boost::filesystem::create_directories(archive_path_string);
+
+      // Create archived filename - include DMR radio ID for conventional DMR transmissions
+      fs::path transmission_file_path = current_filename;
+      fs::path archive_file_path;
+
+      if (d_current_call->get_system_type() == "conventionalDMR" && curr_src_id != -1) {
+        // For conventional DMR, include the radio ID in the filename
+        std::string base_filename = transmission_file_path.stem().string();
+        std::string extension = transmission_file_path.extension().string();
+        std::string dmr_filename = base_filename + "_" + std::to_string(curr_src_id) + extension;
+        archive_file_path = fs::path(archive_path_string) / dmr_filename;
+      } else {
+        // Use the original filename for other system types
+        archive_file_path = fs::path(archive_path_string) / transmission_file_path.filename();
+      }
+
+      try {
+        // Copy the transmission file to archive directory
+        fs::copy_file(transmission_file_path, archive_file_path);
+
+        // Update the transmission filename to point to the archived file
+        strcpy(transmission.filename, archive_file_path.c_str());
+
+        std::string loghdr = log_header(d_current_call_short_name, d_current_call_num,
+                                       d_current_call_talkgroup_display, d_current_call_freq);
+        BOOST_LOG_TRIVIAL(info) << loghdr << "Transmission immediately archived to: " << archive_file_path;
+
+      } catch (const std::exception& e) {
+        std::string loghdr = log_header(d_current_call_short_name, d_current_call_num,
+                                       d_current_call_talkgroup_display, d_current_call_freq);
+        BOOST_LOG_TRIVIAL(error) << loghdr << "Failed to archive transmission: " << e.what();
+      }
+    }
+
     this->add_transmission(transmission);
 
     // Reset the recorder to be ready to record the next Transmission

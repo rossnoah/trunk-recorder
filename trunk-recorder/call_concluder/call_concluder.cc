@@ -174,18 +174,25 @@ void remove_call_files(Call_Data_t call_info) {
         // Only move transmission wavs if they exist
         if (checkIfFile(t.filename)) {
 
-          // Prevent "boost::filesystem::copy_file: Invalid cross-device link" errors by using std::filesystem if boost < 1.76
-          // This issue exists for old boost versions OR 5.x kernels
-          #if (BOOST_VERSION/100000) == 1 && ((BOOST_VERSION/100)%1000) < 76
-            fs::path target_file = fs::path(fs::path(call_info.filename ).replace_filename(fs::path(t.filename).filename()));
-            fs::path transmission_file = t.filename;
-            fs::copy_file(transmission_file, target_file);
-          #else
-            boost::filesystem::path target_file = boost::filesystem::path(fs::path(call_info.filename ).replace_filename(fs::path(t.filename).filename()));
-            boost::filesystem::path transmission_file = t.filename;
-            boost::filesystem::copy_file(transmission_file, target_file);
-          #endif
-        //boost::filesystem::path target_file = boost::filesystem::path(call_info.filename).replace_filename(transmission_file.filename()); // takes the capture dir from the call file and adds the transmission filename to it
+          // Check if transmissions were already archived immediately (for only_archive_transmissions mode)
+          fs::path transmission_path = t.filename;
+          fs::path call_path = call_info.filename;
+          bool already_archived = (transmission_path.parent_path() == call_path.parent_path());
+
+          // Skip copying if transmission is already in the archive directory
+          if (!already_archived) {
+            // Prevent "boost::filesystem::copy_file: Invalid cross-device link" errors by using std::filesystem if boost < 1.76
+            // This issue exists for old boost versions OR 5.x kernels
+            #if (BOOST_VERSION/100000) == 1 && ((BOOST_VERSION/100)%1000) < 76
+              fs::path target_file = fs::path(fs::path(call_info.filename ).replace_filename(fs::path(t.filename).filename()));
+              fs::path transmission_file = t.filename;
+              fs::copy_file(transmission_file, target_file);
+            #else
+              boost::filesystem::path target_file = boost::filesystem::path(fs::path(call_info.filename ).replace_filename(fs::path(t.filename).filename()));
+              boost::filesystem::path transmission_file = t.filename;
+              boost::filesystem::copy_file(transmission_file, target_file);
+            #endif
+          }
         }
 
       }
@@ -195,7 +202,15 @@ void remove_call_files(Call_Data_t call_info) {
     for (std::vector<Transmission>::iterator it = call_info.transmission_list.begin(); it != call_info.transmission_list.end(); ++it) {
       Transmission t = *it;
       if (checkIfFile(t.filename)) {
-        remove(t.filename);
+        // Check if this is a transmission file already archived immediately
+        fs::path transmission_path = t.filename;
+        fs::path call_path = call_info.filename;
+        bool already_archived = (transmission_path.parent_path() == call_path.parent_path());
+
+        // Only remove temp files, not archived files
+        if (!already_archived || !call_info.only_archive_transmissions) {
+          remove(t.filename);
+        }
       }
     }
   }
@@ -346,6 +361,7 @@ Call_Data_t Call_Concluder::create_call_data(Call *call, System *sys, Config con
   call_info.upload_script = sys->get_upload_script();
   call_info.audio_archive = sys->get_audio_archive();
   call_info.transmission_archive = sys->get_transmission_archive();
+  call_info.only_archive_transmissions = sys->get_only_archive_transmissions();
   call_info.call_log = sys->get_call_log();
   call_info.call_num = call->get_call_num();
   call_info.compress_wav = sys->get_compress_wav();
