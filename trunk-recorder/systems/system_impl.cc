@@ -278,6 +278,14 @@ void System_impl::set_transmission_archive(bool transmission_archive) {
   this->transmission_archive = transmission_archive;
 }
 
+bool System_impl::get_only_archive_transmissions() {
+  return this->only_archive_transmissions;
+}
+
+void System_impl::set_only_archive_transmissions(bool only_archive_transmissions) {
+  this->only_archive_transmissions = only_archive_transmissions;
+}
+
 bool System_impl::get_record_unknown() {
   return this->record_unknown;
 }

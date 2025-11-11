@@ -100,6 +100,7 @@ public:
   std::vector<dmr_recorder_sptr> conventionalDMR_recorders;
   std::vector<sigmf_recorder_sptr> conventionalSIGMF_recorders;
   bool transmission_archive;
+  bool only_archive_transmissions;
   bool audio_archive;
   bool record_unknown;
   bool call_log;
@@ -131,6 +132,8 @@ public:
   void set_audio_archive(bool) override;
   bool get_transmission_archive() override;
   void set_transmission_archive(bool) override;
+  bool get_only_archive_transmissions() override;
+  void set_only_archive_transmissions(bool) override;
   bool get_record_unknown() override;
   void set_record_unknown(bool) override;
   bool get_call_log() override;

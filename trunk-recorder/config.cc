@@ -355,6 +355,8 @@ bool load_config(string config_file, Config &config, gr::top_block_sptr &tb, std
         BOOST_LOG_TRIVIAL(info) << "Audio Archive: " << system->get_audio_archive();
         system->set_transmission_archive(element.value("transmissionArchive", false));
         BOOST_LOG_TRIVIAL(info) << "Transmission Archive: " << system->get_transmission_archive();
+        system->set_only_archive_transmissions(element.value("onlyArchiveTransmissions", false));
+        BOOST_LOG_TRIVIAL(info) << "Only Archive Transmissions: " << system->get_only_archive_transmissions();
         system->set_unit_tags_file(element.value("unitTagsFile", ""));
         BOOST_LOG_TRIVIAL(info) << "Unit Tags File: " << system->get_unit_tags_file();
         system->set_record_unknown(element.value("recordUnknown", true));

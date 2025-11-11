@@ -114,6 +114,7 @@ struct Call_Data_t {
   bool duplex;
   bool audio_archive;
   bool transmission_archive;
+  bool only_archive_transmissions;
   bool call_log;
   bool compress_wav;
   char filename[300];

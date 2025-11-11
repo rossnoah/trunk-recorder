@@ -69,6 +69,8 @@ public:
   virtual void set_audio_archive(bool) = 0;
   virtual bool get_transmission_archive() = 0;
   virtual void set_transmission_archive(bool) = 0;
+  virtual bool get_only_archive_transmissions() = 0;
+  virtual void set_only_archive_transmissions(bool) = 0;
   virtual bool get_record_unknown() = 0;
   virtual void set_record_unknown(bool) = 0;
   virtual bool get_call_log() = 0;

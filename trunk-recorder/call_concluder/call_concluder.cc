@@ -154,6 +154,18 @@ void remove_call_files(Call_Data_t call_info) {
       }
     }
   } else {
+
+    // Delete the call audio files if onlyArchiveTransmissions is set
+    if (call_info.only_archive_transmissions) { //
+      if (checkIfFile(call_info.filename)) {
+        remove(call_info.filename);
+      }
+      if (checkIfFile(call_info.converted)) {
+        remove(call_info.converted);
+      }
+    }
+
+    // Archive transmissions
     if (call_info.transmission_archive) {
       // if the files are being archived, move them to the capture directory
       for (std::vector<Transmission>::iterator it = call_info.transmission_list.begin(); it != call_info.transmission_list.end(); ++it) {
