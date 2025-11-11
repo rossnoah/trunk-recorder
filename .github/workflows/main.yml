@@ -17,5 +17,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
-      - name: Run install script
-        run: ./install.sh
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            gnuradio gnuradio-dev gr-osmosdr libhackrf-dev libuhd-dev libgmp-dev \
+            fdkaac sox \
+            git cmake build-essential libboost-all-dev libusb-1.0-0-dev libssl-dev \
+            libcurl4-openssl-dev liborc-0.4-dev pkg-config libpthread-stubs0-dev \
+            --no-install-recommends -o Apt::AutoRemove::SuggestsImportant=false
+          sudo apt-get remove -y xtrx-dkms || true
+      
+      - name: Build
+        run: |
+          mkdir build
+          cd build
+          cmake ../
+          make
